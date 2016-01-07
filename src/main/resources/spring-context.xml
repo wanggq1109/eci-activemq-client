@@ -1,0 +1,43 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<beans xmlns="http://www.springframework.org/schema/beans"
+       xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
+       xmlns:context="http://www.springframework.org/schema/context"
+       xsi:schemaLocation="http://www.springframework.org/schema/beans
+        http://www.springframework.org/schema/beans/spring-beans.xsd http://www.springframework.org/schema/context http://www.springframework.org/schema/context/spring-context.xsd">
+
+    <!-- 自动扫描(自动注入) -->
+    <context:component-scan base-package="com.eci.mq"/>
+
+    <!-- 配置JMS连接工厂 -->
+    <bean id="connectionFactory" class="org.apache.activemq.ActiveMQConnectionFactory">
+        <property name="brokerURL" value="failover:(tcp://10.11.10.36:61616)"/>
+    </bean>
+
+    <!-- 定义消息队列（Queue） -->
+    <bean id="sessionAwareQueue" class="org.apache.activemq.command.ActiveMQQueue">
+        <!-- 设置消息队列的名字 -->
+        <constructor-arg>
+            <value>sessionAwareQueue</value>
+        </constructor-arg>
+    </bean>
+
+    <!-- 配置JMS模板（Queue），Spring提供的JMS工具类，发送、接收消息。 -->
+    <bean id="jmsTemplate" class="org.springframework.jms.core.JmsTemplate">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="receiveTimeout" value="50000"/>
+    </bean>
+
+    <!-- 可以获取session的MessageListener -->
+    <bean id="consumerSessionAwareMessageListener" class="com.eci.mq.listener.MessageReceiverListener">
+    </bean>
+
+
+    <bean id="sessionAwareListenerContainer"
+          class="org.springframework.jms.listener.DefaultMessageListenerContainer">
+        <property name="connectionFactory" ref="connectionFactory"/>
+        <property name="destination" ref="sessionAwareQueue"/>
+        <property name="messageListener" ref="consumerSessionAwareMessageListener"/>
+
+    </bean>
+
+</beans>
